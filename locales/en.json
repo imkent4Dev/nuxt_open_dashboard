@@ -1,0 +1,70 @@
+{
+  "common": {
+    "dashboard": "Dashboard",
+    "login": "Login",
+    "logout": "Logout",
+    "settings": "Settings",
+    "search": "Search",
+    "profile": "Profile",
+    "notifications": "Notifications",
+    "save": "Save",
+    "cancel": "Cancel",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "language": "Language"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "analytics": "Analytics", 
+    "users": "Users",
+    "documents": "Documents",
+    "settings": "Settings"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome back, {name}! Here's what's happening today.",
+    "totalRevenue": "Total Revenue",
+    "activeUsers": "Active Users",
+    "orders": "Orders",
+    "conversionRate": "Conversion Rate",
+    "revenueOverview": "Revenue Overview",
+    "recentActivity": "Recent Activity",
+    "quickActions": "Quick Actions",
+    "viewAllActivity": "View all activity",
+    "addUser": "Add User",
+    "newDocument": "New Document",
+    "newItem": "New Item",
+    "vsLastMonth": "vs last month",
+    "currentlyOnline": "Currently online",
+    "thisMonth": "This month",
+    "vsIndustryAvg": "vs industry avg"
+  },
+  "login": {
+    "title": "Sign in to Dashboard",
+    "subtitle": "Enter your credentials to access your account",
+    "email": "Email address",
+    "password": "Password",
+    "emailPlaceholder": "Enter your email",
+    "passwordPlaceholder": "Enter your password",
+    "signIn": "Sign in",
+    "signingIn": "Signing in...",
+    "demoCredentials": "Demo Credentials",
+    "invalidCredentials": "Invalid credentials",
+    "noAccount": "Don't have an account?",
+    "signUp": "Sign up"
+  },
+  "activity": {
+    "newUserRegistered": "New user registered",
+    "orderCompleted": "Order #{id} completed",
+    "maintenanceScheduled": "System maintenance scheduled",
+    "messageReceived": "New message received",
+    "minutesAgo": "{count} minutes ago",
+    "hoursAgo": "{count} hours ago"
+  },
+  "time": {
+    "last7Days": "Last 7 days",
+    "last30Days": "Last 30 days", 
+    "last90Days": "Last 90 days"
+  }
+}

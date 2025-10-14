@@ -1,0 +1,55 @@
+/* styles.css or your Tailwind global file */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-slate-900 via-red-500 to-yellow-400;
+  }
+
+  .btn-gradient {
+    @apply px-4 py-2 font-medium text-white rounded-lg shadow-md bg-gradient-to-r from-slate-900 via-red-500 to-yellow-400 hover:opacity-90 transition;
+  }
+}
+
+
+.sidebar-transition {
+  transition: width 0.3s ease-in-out;
+}
+
+/* Custom scrollbar for navigation */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Hide scrollbar for Firefox */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1);
+}
+
+/* Smooth icon transitions */
+.group:hover img {
+  transform: scale(1.05);
+  transition: transform 0.2s ease-in-out;
+}
+
+/* Active state glow effect */
+.bg-white.bg-opacity-30 {
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+}
