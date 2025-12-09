@@ -1,19 +1,19 @@
 <template>
-  <!-- <aside
+  <aside
   v-show="isOpen"
   class="fixed left-0 top-0 h-full w-64 bg-gradient-to-b from-orange-300 to-red-400 z-30 overflow-hidden flex flex-col"
-> --> 
-<aside
+> 
+<!-- <aside
   v-show="isOpen"
   class="fixed left-0 top-0 h-full w-64 z-30 overflow-hidden flex flex-col bg-transparent"
->
+> -->
 
   <!-- Logo -->
   <div class="p-4 border-b border-white border-opacity-20 flex flex-col items-center">
     <div class="w-24 h-24 bg-white rounded-full flex p-2 mb-2">
       <img src="/icons/cnb_logo.png" alt="CNB Logo" class="w-full h-full object-contain" />
     </div>
-    <div class="text-center text-gradient font-bold">COLLATERAL EVALUATION</div>
+    <div class="text-center text-gradient font-bold">IM PORTAL</div>
   </div>
 
   <!-- Navigation -->
@@ -43,7 +43,6 @@
 </template>
 
 <script setup>
-import { ChevronDownIcon } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
   isOpen: {
@@ -59,11 +58,11 @@ const authStore = useAuthStore()
 // Navigation items with SVG icons
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: '/icons/dashboard.png', hasSubmenu: false },
-  // { name: 'Property Map', href: '/property-map', icon: '/icons/property-map.png', hasSubmenu: false },
+  // { name: 'Users', href: '/property-map', icon: '/icons/property-map.png', hasSubmenu: false },
   { name: 'Customer', href: '/customer', icon: '/icons/customer.png', hasSubmenu: false },
   // { name: 'Branch Request', href: '/branch-request', icon: '/icons/branch-request.png', hasSubmenu: false },
   { name: 'Property', href: '/property', icon: '/icons/property.png', hasSubmenu: false },
-  // { name: 'Evaluation By Branch', href: '/evaluation-branch', icon: '/icons/evaluation.png', hasSubmenu: false },
+  { name: 'Evaluation By Branch', href: '/evaluation-branch', icon: '/icons/evaluation.png', hasSubmenu: false },
   // { name: 'Evaluation By SME', href: '/evaluation-sme', icon: '/icons/evaluation.png', hasSubmenu: false },
   // { name: 'Evaluation By Mega', href: '/evaluation-mega', icon: '/icons/evaluation.png', hasSubmenu: false },
   // { name: 'Evaluation By Agency', href: '/evaluation-agency', icon: '/icons/evaluation.png', hasSubmenu: false },
@@ -72,7 +71,6 @@ const navigation = [
 </script>
 
 <style scoped>
-/* Optional: smooth sidebar transition */
 .sidebar-transition {
   transition: all 0.3s ease-in-out;
 }
