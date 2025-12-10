@@ -17,7 +17,6 @@ export class HttpClient {
         ...options.headers
       }
     }
-    console.log("Url Check :", url);
     
     // Add auth headers if store is available and user is authenticated
     if (this.authStore?.isAuthenticated) {

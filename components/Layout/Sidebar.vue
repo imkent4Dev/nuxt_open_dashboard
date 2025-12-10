@@ -116,8 +116,8 @@ const dropdownSections = [
     items: [
       { name: 'All Users', href: '/users' },
       { name: 'Add User' },
-      { name: 'Roles' },
-      { name: 'Permissions' }
+      { name: 'Roles', href: '/roles'  },
+      { name: 'Permissions', href: '/permissions'  }
     ]
   },
   {
