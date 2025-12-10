@@ -1,5 +1,28 @@
 <template>
-    <div class="py-6">
+  <div class="py-6">
+    <!-- Loading State -->
+    <div v-if="loading" class="text-center py-12">
+      <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
+      <p class="mt-4 text-gray-600">Loading dashboard...</p>
+    </div>
+
+    <!-- Error State -->
+    <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-xl p-6 text-center mb-8">
+      <svg class="w-12 h-12 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <h3 class="text-lg font-semibold text-red-800 mb-2">Failed to load dashboard</h3>
+      <p class="text-red-600 mb-4">{{ error }}</p>
+      <button
+        @click="fetchDashboardData"
+        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium"
+      >
+        Try Again
+      </button>
+    </div>
+
+    <!-- Dashboard Content -->
+    <div v-else>
       <!-- Page Header with User Role Info -->
       <div class="mb-8">
         <div class="flex items-center justify-between">
@@ -18,7 +41,7 @@
             </div>
           </div>
           <div class="flex items-center space-x-3">
-            <button @click="refreshDashboard"
+            <button @click="fetchDashboardData"
               class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
               Refresh
             </button>
@@ -36,7 +59,7 @@
             <div>
               <h3 class="text-sm font-medium text-gray-900">Your Permissions</h3>
               <p class="text-sm text-gray-500 mt-1">
-                {{ userRole.permissions.length }} permissions granted
+                {{ userRole.permissions?.length || 0 }} permissions granted
               </p>
             </div>
             <NuxtLink v-if="hasPermission('ROLE_READ')" to="/roles"
@@ -47,17 +70,17 @@
           
           <!-- Quick Permission Tags -->
           <div class="flex flex-wrap gap-2 mt-3">
-            <span v-for="permission in quickPermissions" :key="permission.id"
+            <span v-for="permission in quickPermissions" :key="permission"
               class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-              {{ formatPermissionName(permission.name) }}
+              {{ formatPermissionName(permission) }}
             </span>
-            <span v-if="userRole.permissions.length > 3" class="text-xs text-gray-500">
+            <span v-if="userRole.permissions?.length > 3" class="text-xs text-gray-500">
               +{{ userRole.permissions.length - 3 }} more
             </span>
           </div>
         </div>
       </div>
-  
+
       <!-- Role-Based Dashboard Grid -->
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <!-- Left Column: User Stats & Permissions -->
@@ -89,7 +112,7 @@
               </div>
             </div>
           </div>
-  
+
           <!-- Quick Actions (Based on Permissions) -->
           <div class="bg-white rounded-xl border border-gray-200 p-5">
             <h3 class="text-sm font-medium text-gray-900 mb-4">Quick Actions</h3>
@@ -119,7 +142,7 @@
             </div>
           </div>
         </div>
-  
+
         <!-- Right Column: Main Dashboard Content -->
         <div class="lg:col-span-3 space-y-6">
           <!-- Role-Based Stats Grid -->
@@ -141,7 +164,7 @@
                 View Users →
               </NuxtLink>
             </div>
-  
+
             <!-- Active Users -->
             <div class="bg-white rounded-xl border border-gray-200 p-5">
               <div class="flex items-center justify-between mb-4">
@@ -153,13 +176,15 @@
                 </div>
               </div>
               <div class="text-3xl font-bold text-gray-900">{{ formatNumber(dashboardData.activeUsers) }}</div>
-              <p class="text-sm text-gray-500 mt-2">Currently active</p>
-              <div class="flex items-center mt-2">
-                <span class="text-sm text-green-600">+{{ dashboardData.newUsersThisMonth }}</span>
-                <span class="text-xs text-gray-500 ml-2">new this month</span>
+              <p class="text-sm text-gray-500 mt-2">Currently active users</p>
+              <div class="mt-4">
+                <div class="text-xs text-gray-500 mb-1">Inactive: {{ dashboardData.inactiveUsers }}</div>
+                <div class="w-full bg-gray-200 rounded-full h-1">
+                  <div class="bg-green-500 h-1 rounded-full" :style="{ width: `${activeUserPercentage}%` }"></div>
+                </div>
               </div>
             </div>
-  
+
             <!-- Total Roles -->
             <div class="bg-white rounded-xl border border-gray-200 p-5">
               <div class="flex items-center justify-between mb-4">
@@ -177,7 +202,7 @@
                 Manage Roles →
               </NuxtLink>
             </div>
-  
+
             <!-- Total Permissions -->
             <div class="bg-white rounded-xl border border-gray-200 p-5">
               <div class="flex items-center justify-between mb-4">
@@ -195,25 +220,25 @@
                 View All →
               </NuxtLink>
             </div>
-  
+
             <!-- Recent Activity -->
             <div class="bg-white rounded-xl border border-gray-200 p-5">
               <div class="flex items-center justify-between mb-4">
-                <h3 class="text-sm font-medium text-gray-900">Recent Activity</h3>
+                <h3 class="text-sm font-medium text-gray-900">Recent Logins</h3>
                 <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
                   <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
               </div>
-              <div class="text-3xl font-bold text-gray-900">{{ formatNumber(dashboardData.recentActivities) }}</div>
-              <p class="text-sm text-gray-500 mt-2">Activities in last 24h</p>
+              <div class="text-3xl font-bold text-gray-900">{{ formatNumber(dashboardData.loginsLast24Hours) }}</div>
+              <p class="text-sm text-gray-500 mt-2">Logins in last 24 hours</p>
               <button v-if="hasPermission('AUDIT_READ')" @click="navigateTo('/audit-logs')"
                 class="inline-block mt-4 text-sm text-gray-600 hover:text-gray-800">
                 View Logs →
               </button>
             </div>
-  
+
             <!-- System Health -->
             <div class="bg-white rounded-xl border border-gray-200 p-5">
               <div class="flex items-center justify-between mb-4">
@@ -224,35 +249,103 @@
                   </svg>
                 </div>
               </div>
-              <div class="text-3xl font-bold text-gray-900">{{ dashboardData.systemHealth }}%</div>
-              <p class="text-sm text-gray-500 mt-2">All systems operational</p>
+              <div class="text-3xl font-bold text-gray-900">{{ systemHealth }}%</div>
+              <p class="text-sm text-gray-500 mt-2">System status</p>
               <div class="mt-2">
                 <div class="w-full bg-gray-200 rounded-full h-2">
-                  <div class="bg-green-600 h-2 rounded-full" :style="{ width: `${dashboardData.systemHealth}%` }"></div>
+                  <div class="bg-green-600 h-2 rounded-full" :style="{ width: `${systemHealth}%` }"></div>
                 </div>
               </div>
             </div>
           </div>
-  
+
+          <!-- Audit Logs Table -->
+          <div v-if="hasPermission('AUDIT_READ') && dashboardData.recentAuditLogs?.length > 0" class="bg-white rounded-xl border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-6">
+              <div>
+                <h3 class="text-lg font-semibold text-gray-900">Recent Activity Logs</h3>
+                <p class="text-sm text-gray-500 mt-1">Latest user activities and system events</p>
+              </div>
+              <NuxtLink to="/audit-logs" class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                View All Logs →
+              </NuxtLink>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead>
+                  <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Resource</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                  <tr v-for="log in dashboardData.recentAuditLogs.slice(0, 5)" :key="log.id">
+                    <td class="px-4 py-3 whitespace-nowrap">
+                      <div class="flex items-center">
+                        <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium text-sm">
+                          {{ getInitials(log.username || 'Unknown') }}
+                        </div>
+                        <div class="ml-3">
+                          <div class="text-sm font-medium text-gray-900">{{ log.username || 'System' }}</div>
+                          <div class="text-xs text-gray-500">ID: {{ log.userId || 'N/A' }}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                      <span :class="[
+                        'px-2 py-1 text-xs font-medium rounded-full',
+                        getActionColor(log.action)
+                      ]">
+                        {{ log.action }}
+                      </span>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                      {{ log.resource }}
+                      <div v-if="log.resourceId" class="text-xs text-gray-500">ID: {{ log.resourceId }}</div>
+                    </td>
+                    <td class="px-4 py-3 text-sm text-gray-900 max-w-xs truncate">
+                      {{ log.details }}
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                      {{ formatTimeAgo(log.timestamp) }}
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                      <span :class="[
+                        'px-2 py-1 text-xs font-medium rounded-full',
+                        log.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      ]">
+                        {{ log.success ? 'Success' : 'Failed' }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           <!-- User Role Distribution -->
-          <div v-if="hasPermission('USER_READ')" class="bg-white rounded-xl border border-gray-200 p-6">
+          <div v-if="hasPermission('USER_READ') && roleDistribution.length > 0" class="bg-white rounded-xl border border-gray-200 p-6">
             <div class="flex items-center justify-between mb-6">
               <div>
                 <h3 class="text-lg font-semibold text-gray-900">User Role Distribution</h3>
                 <p class="text-sm text-gray-500 mt-1">Breakdown of users by their roles</p>
               </div>
-              <button @click="refreshUserStats"
+              <button @click="fetchDashboardData"
                 class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">
                 Refresh
               </button>
             </div>
-  
+
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div 
                 v-for="role in roleDistribution" 
                 :key="role.id"
-                class="p-4 rounded-lg border border-gray-100 hover:border-blue-200 transition-colors cursor-pointer"
-                @click="navigateTo(`/users?role=${role.name}`)"
+                class="p-4 rounded-lg border border-gray-100 hover:border-blue-200 transition-colors"
               >
                 <div class="flex items-center justify-between mb-2">
                   <div class="text-sm font-medium text-gray-900">
@@ -262,241 +355,252 @@
                     {{ role.isSystemRole ? 'System' : 'Custom' }}
                   </span>
                 </div>
-                <div class="text-2xl font-bold text-gray-900">{{ role.userCount }}</div>
-                <div class="flex items-center mt-2">
-                  <span class="text-sm" :class="role.percentage >= 0 ? 'text-green-600' : 'text-red-600'">
-                    {{ role.percentage >= 0 ? '+' : '' }}{{ role.percentage }}%
-                  </span>
-                  <span class="text-xs text-gray-500 ml-2">of total users</span>
+                <div class="text-2xl font-bold text-gray-900">{{ role.userCount || 0 }}</div>
+                <div class="mt-2">
+                  <div class="text-xs text-gray-500 mb-1">Percentage</div>
+                  <div class="w-full bg-gray-200 rounded-full h-1">
+                    <div class="bg-blue-500 h-1 rounded-full" :style="{ width: `${rolePercentage(role)}%` }"></div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-  
-          <!-- Recent Users Table -->
-          <div v-if="hasPermission('USER_READ')" class="bg-white rounded-xl border border-gray-200 p-6">
-            <div class="flex items-center justify-between mb-6">
-              <div>
-                <h3 class="text-lg font-semibold text-gray-900">Recent Users</h3>
-                <p class="text-sm text-gray-500 mt-1">Newly registered users</p>
-              </div>
-              <NuxtLink to="/users" class="text-sm text-blue-600 hover:text-blue-800 font-medium">
-                View All →
-              </NuxtLink>
-            </div>
-  
-            <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-gray-200">
-                <thead>
-                  <tr>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200">
-                  <tr v-for="user in recentUsers" :key="user.id">
-                    <td class="px-4 py-3 whitespace-nowrap">
-                      <div class="flex items-center">
-                        <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium text-sm">
-                          {{ user.initials }}
-                        </div>
-                        <div class="ml-3">
-                          <div class="text-sm font-medium text-gray-900">{{ user.name }}</div>
-                          <div class="text-sm text-gray-500">{{ user.email }}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 whitespace-nowrap">
-                      <span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded">
-                        {{ formatRoleName(user.role) }}
-                      </span>
-                    </td>
-                    <td class="px-4 py-3 whitespace-nowrap">
-                      <span :class="[
-                        'px-2 py-1 text-xs font-medium rounded-full',
-                        user.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      ]">
-                        {{ user.active ? 'Active' : 'Inactive' }}
-                      </span>
-                    </td>
-                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                      {{ formatDate(user.joined) }}
-                    </td>
-                    <td class="px-4 py-3 whitespace-nowrap text-sm">
-                      <button 
-                        v-if="hasPermission('USER_READ')"
-                        @click="viewUser(user.id)"
-                        class="text-blue-600 hover:text-blue-800 mr-3"
-                      >
-                        View
-                      </button>
-                      <button 
-                        v-if="hasPermission('USER_UPDATE')"
-                        @click="editUser(user.id)"
-                        class="text-green-600 hover:text-green-800"
-                      >
-                        Edit
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </template>
-  
-  <script setup>
-  // Define page meta
-  definePageMeta({
-    layout: 'default'
-  })
-  
-  import { useAuthStore } from '~/stores/auth'
-  import { useHttp } from '~/services/httpClient'
-  
-  const router = useRouter()
-  const authStore = useAuthStore()
-  const { get } = useHttp()
-  
-  const loading = ref(false)
-  const error = ref('')
-  
-  const userData = computed(() => ({
-    name: authStore.user?.name || 'User',
-    role: authStore.user?.role?.name || 'ROLE_USER',
-    permissions: authStore.user?.role?.permissions || [],
-    lastLogin: authStore.user?.lastLogin || null
-  }))
-  
-  const userRole = computed(() => ({
-    name: userData.value.role,
-    level: authStore.user?.role?.level || 1,
-    description: authStore.user?.role?.description || '',
-    permissions: userData.value.permissions,
-    color: authStore.user?.role?.color || 'bg-blue-100 text-blue-800'
-  }))
-  
-  const hasPermission = (permission) => {
-    return Array.isArray(userRole.value.permissions) && userRole.value.permissions.includes(permission)
+  </div>
+</template>
+
+<script setup>
+// Define page meta
+definePageMeta({
+  layout: 'default'
+})
+
+import { useAuthStore } from '~/stores/auth'
+import { useHttp } from '~/services/httpClient'
+import { useRoute } from 'nuxt/app'
+
+const router = useRoute()
+const authStore = useAuthStore()
+const http = useHttp()
+
+const loading = ref(false)
+const error = ref('')
+
+// User data from auth store
+const userData = computed(() => ({
+  name: authStore.user?.firstName ? `${authStore.user.firstName} ${authStore.user.lastName}` : authStore.user?.username || 'User',
+  role: authStore.user?.role?.name || 'ROLE_USER',
+  permissions: authStore.user?.role?.permissions || [],
+  lastLogin: authStore.user?.lastLogin || null
+}))
+
+// Role definitions based on actual API roles
+const roles = {
+  'ROLE_SUPER_ADMIN': {
+    name: 'ROLE_SUPER_ADMIN',
+    level: 4,
+    description: 'Super Administrator - Full system access with all permissions',
+    color: 'bg-red-100 text-red-800'
+  },
+  'ROLE_ADMIN': {
+    name: 'ROLE_ADMIN',
+    level: 3,
+    description: 'Administrator - User, Role, and Permission management',
+    color: 'bg-blue-100 text-blue-800'
+  },
+  'ROLE_MANAGER': {
+    name: 'ROLE_MANAGER',
+    level: 2,
+    description: 'Manager - Content and Report management with user read access',
+    color: 'bg-green-100 text-green-800'
+  },
+  'ROLE_USER': {
+    name: 'ROLE_USER',
+    level: 1,
+    description: 'Regular User - Basic read access only',
+    color: 'bg-gray-100 text-gray-800'
   }
-  
-  const quickPermissions = computed(() => (userRole.value.permissions || []).slice(0, 3).map((name, idx) => ({
-    id: idx,
-    name
-  })))
-  
-  const permissionScore = computed(() => {
-    const maxPermissions = Math.max(userRole.value.permissions?.length || 0, 1)
-    return Math.round((userRole.value.permissions?.length || 0) / maxPermissions * 100)
-  })
-  
-  const roleBadgeClass = computed(() => userRole.value.color)
-  
-  const dashboardData = reactive({
-    totalUsers: 0,
-    activeUsers: 0,
-    newUsersThisMonth: 0,
-    totalRoles: 0,
-    totalPermissions: 0,
-    recentActivities: 0,
-    systemHealth: 0
-  })
-  
-  const roleDistribution = ref([])
-  const recentUsers = ref([])
-  
-  const ENDPOINTS = {
-    summary: '/api/v1/dashboard/summary',
-    roleDistribution: '/api/v1/dashboard/role-distribution',
-    recentUsers: '/api/v1/dashboard/recent-users'
+}
+
+// Get user role
+const userRole = computed(() => {
+  const roleName = userData.value.role
+  return roles[roleName] || {
+    name: roleName,
+    level: 1,
+    description: 'User role',
+    color: 'bg-gray-100 text-gray-800',
+    permissions: userData.value.permissions || []
   }
+})
+
+// Permission check function
+const hasPermission = (permission) => {
+  return Array.isArray(userRole.value.permissions) && userRole.value.permissions.includes(permission)
+}
+
+// Quick permissions for display
+const quickPermissions = computed(() => {
+  const perms = userRole.value.permissions || []
+  return perms.slice(0, 3)
+})
+
+// Permission score
+const permissionScore = computed(() => {
+  const totalPossible = 24 // Total permissions from your API
+  const userPerms = userRole.value.permissions?.length || 0
+  return Math.round((userPerms / totalPossible) * 100)
+})
+
+// Role badge class
+const roleBadgeClass = computed(() => userRole.value.color)
+
+// Dashboard data
+const dashboardData = ref({
+  totalUsers: 0,
+  activeUsers: 0,
+  inactiveUsers: 0,
+  totalRoles: 0,
+  totalPermissions: 0,
+  loginsLast24Hours: 0,
+  recentAuditLogs: []
+})
+
+// Computed properties
+const activeUserPercentage = computed(() => {
+  if (dashboardData.value.totalUsers === 0) return 0
+  return Math.round((dashboardData.value.activeUsers / dashboardData.value.totalUsers) * 100)
+})
+
+const systemHealth = computed(() => {
+  // Calculate system health based on recent successful activities
+  const recentLogs = dashboardData.value.recentAuditLogs || []
+  if (recentLogs.length === 0) return 100
   
-  const loadDashboard = async () => {
-    loading.value = true
-    error.value = ''
+  const successfulLogs = recentLogs.filter(log => log.success).length
+  return Math.round((successfulLogs / recentLogs.length) * 100)
+})
+
+const roleDistribution = computed(() => {
+  // This would need to come from your API
+  // For now, using static data that matches your API response
+  return [
+    { id: 1, name: 'ROLE_SUPER_ADMIN', userCount: 1, isSystemRole: true },
+    { id: 2, name: 'ROLE_ADMIN', userCount: 1, isSystemRole: true },
+    { id: 3, name: 'ROLE_MANAGER', userCount: 0, isSystemRole: true },
+    { id: 4, name: 'ROLE_USER', userCount: 1, isSystemRole: true }
+  ]
+})
+
+// Formatting functions
+const formatNumber = (num) => {
+  return num?.toLocaleString() || '0'
+}
+
+const formatDate = (dateString) => {
+  if (!dateString) return 'N/A'
+  const date = new Date(dateString)
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  })
+}
+
+const formatTimeAgo = (dateString) => {
+  if (!dateString) return 'N/A'
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffMs = now - date
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMs / 3600000)
   
-    try {
-      const [summaryRes, rolesRes, recentRes] = await Promise.all([
-        get(ENDPOINTS.summary),
-        get(ENDPOINTS.roleDistribution),
-        get(ENDPOINTS.recentUsers)
-      ])
+  if (diffMins < 1) return 'just now'
+  if (diffMins < 60) return `${diffMins}m ago`
+  if (diffHours < 24) return `${diffHours}h ago`
+  return formatDate(dateString)
+}
+
+const formatRoleName = (roleName) => {
+  if (!roleName) return ''
+  return roleName.replace('ROLE_', '').replace(/_/g, ' ')
+}
+
+const formatPermissionName = (permissionName) => {
+  if (!permissionName) return ''
+  const parts = permissionName.split('_')
+  if (parts.length < 2) return permissionName
+  return `${parts[1]} ${parts[0].toLowerCase()}`
+}
+
+const getInitials = (name) => {
+  if (!name) return '?'
+  return name
+    .split(' ')
+    .map(part => part.charAt(0).toUpperCase())
+    .join('')
+    .slice(0, 2)
+}
+
+const getActionColor = (action) => {
+  const colors = {
+    LOGIN: 'bg-blue-100 text-blue-800',
+    LOGOUT: 'bg-gray-100 text-gray-800',
+    CREATE: 'bg-green-100 text-green-800',
+    READ: 'bg-blue-100 text-blue-800',
+    UPDATE: 'bg-yellow-100 text-yellow-800',
+    DELETE: 'bg-red-100 text-red-800'
+  }
+  return colors[action] || 'bg-gray-100 text-gray-800'
+}
+
+const rolePercentage = (role) => {
+  if (dashboardData.value.totalUsers === 0) return 0
+  return Math.round(((role.userCount || 0) / dashboardData.value.totalUsers) * 100)
+}
+
+// Fetch dashboard data
+const fetchDashboardData = async () => {
+  loading.value = true
+  error.value = ''
   
-      const summary = summaryRes.data || summaryRes
-      dashboardData.totalUsers = summary.totalUsers ?? 0
-      dashboardData.activeUsers = summary.activeUsers ?? 0
-      dashboardData.newUsersThisMonth = summary.newUsersThisMonth ?? 0
-      dashboardData.totalRoles = summary.totalRoles ?? 0
-      dashboardData.totalPermissions = summary.totalPermissions ?? 0
-      dashboardData.recentActivities = summary.recentActivities ?? 0
-      dashboardData.systemHealth = summary.systemHealth ?? 0
-  
-      roleDistribution.value = rolesRes.data || rolesRes || []
-      recentUsers.value = recentRes.data || recentRes || []
-    } catch (err) {
-      console.error('Failed to load dashboard', err)
-      error.value = err.message || 'Failed to load dashboard data'
-    } finally {
-      loading.value = false
+  try {
+    const response = await http.get('/api/v1/dashboard')
+    
+    if (response && response.success === false) {
+      throw new Error(response.message?.en || 'Failed to fetch dashboard data')
     }
+    
+    const data = response?.data || response
+    
+    // Update dashboard data
+    dashboardData.value = {
+      totalUsers: data.totalUsers || 0,
+      activeUsers: data.activeUsers || 0,
+      inactiveUsers: data.inactiveUsers || 0,
+      totalRoles: data.totalRoles || 0,
+      totalPermissions: data.totalPermissions || 0,
+      loginsLast24Hours: data.loginsLast24Hours || 0,
+      recentAuditLogs: data.recentAuditLogs || []
+    }
+    
+  } catch (err) {
+    console.error('Error fetching dashboard:', err)
+    error.value = err.message || 'Failed to load dashboard data'
+  } finally {
+    loading.value = false
   }
-  
-  // Formatting functions
-  const formatNumber = (num) => {
-    return num.toLocaleString()
-  }
-  
-  const formatDate = (dateString) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    })
-  }
-  
-  const formatRoleName = (roleName) => {
-    if (!roleName) return ''
-    return roleName.replace('ROLE_', '').replace(/_/g, ' ')
-  }
-  
-  const formatPermissionName = (permissionName) => {
-    if (!permissionName) return ''
-    const parts = permissionName.split('_')
-    if (parts.length < 2) return permissionName
-    return `${parts[1]} ${parts[0].toLowerCase()}`
-  }
-  
-  // Navigation
-  const navigateTo = (path) => {
-    router.push(path)
-  }
-  
-  const viewUser = (userId) => {
-    navigateTo(`/users/${userId}`)
-  }
-  
-  const editUser = (userId) => {
-    navigateTo(`/users/${userId}/edit`)
-  }
-  
-  // Actions
-  const refreshDashboard = async () => {
-    await loadDashboard()
-  }
-  
-  const refreshUserStats = async () => {
-    await loadDashboard()
-  }
-  
-  // Fetch initial data on component mount
-  onMounted(() => {
-    loadDashboard()
-  })
-  </script>
+}
+
+// Navigation
+const navigateTo = (path) => {
+  router.push(path)
+}
+
+// Fetch initial data on component mount
+onMounted(() => {
+  fetchDashboardData()
+})
+</script>

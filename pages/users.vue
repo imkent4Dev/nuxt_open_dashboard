@@ -419,16 +419,14 @@ async function deleteUser(user) {
   }
 }
 
-async function addUser(newUser) {
+async function addUser(userData) {
   try {
     loading.value = true;
-    const response = await userService.createUser(newUser);
     
-    // Check for errors in the response
-    if (response && response.success === false) {
-      throw new Error(response.message || 'Failed to create user');
-    }
-
+    // ⚠️ REMOVE THIS - modal already made the API call
+    // const response = await userService.createUser(newUser);
+    
+    // Instead, just handle the success from modal
     showAddModal.value = false;
     successMessage.value = 'User has been created successfully!';
     showSuccessModal.value = true;
