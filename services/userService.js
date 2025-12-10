@@ -2,7 +2,9 @@
 export class UserService {
   constructor(httpClient) {
     this.http = httpClient
+    this.baseUrl = '/api/v1/users' // Define base URL
   }
+  
   /**
    * Fetch paginated users list
    * @param {Object} params - Query parameters
@@ -24,7 +26,7 @@ export class UserService {
       queryParams.append('search', params.search.trim())
     }
 
-    const response = await this.http.get(`/api/v1/users?${queryParams}`)
+    const response = await this.http.get(`${this.baseUrl}?${queryParams}`)
     return this.http.parseResponse(response)
   }
 
@@ -32,7 +34,7 @@ export class UserService {
    * Get user by ID
    */
   async getUserById(id) {
-    const response = await this.http.get(`/users/${id}`)
+    const response = await this.http.get(`${this.baseUrl}/${id}`)
     return this.http.parseResponse(response)
   }
 
@@ -40,7 +42,7 @@ export class UserService {
    * Create new user
    */
   async createUser(userData) {
-    const response = await this.http.post('/users', userData)
+    const response = await this.http.post(this.baseUrl, userData)
     return this.http.parseResponse(response)
   }
 
@@ -48,7 +50,7 @@ export class UserService {
    * Update user
    */
   async updateUser(id, userData) {
-    const response = await this.http.put(`/users/${id}`, userData)
+    const response = await this.http.put(`${this.baseUrl}/${id}`, userData)
     return this.http.parseResponse(response)
   }
 
@@ -56,7 +58,7 @@ export class UserService {
    * Delete user
    */
   async deleteUser(id) {
-    const response = await this.http.delete(`/users/${id}`)
+    const response = await this.http.delete(`${this.baseUrl}/${id}`)
     return this.http.parseResponse(response)
   }
 
@@ -64,7 +66,7 @@ export class UserService {
    * Get current user profile
    */
   async getProfile() {
-    const response = await this.http.get('/users/me')
+    const response = await this.http.get(`${this.baseUrl}/me`)
     return this.http.parseResponse(response)
   }
 
@@ -72,13 +74,37 @@ export class UserService {
    * Update current user profile
    */
   async updateProfile(userData) {
-    const response = await this.http.put('/users/me', userData)
+    const response = await this.http.put(`${this.baseUrl}/me`, userData)
     return this.http.parseResponse(response)
   }
-}
 
-// composables/useUserService.js
-export const useUserService = () => {
-  const { client } = useHttp()
-  return new UserService(client)
+  async updateUser(id, userData) {
+    const response = await this.http.put(`${this.baseUrl}/${id}`, userData)
+    return this.http.parseResponse(response)
+  }
+
+  /**
+   * Assign roles to user
+   */
+  async assignRoles(userId, roleIds) {
+    const response = await this.http.post(`${this.baseUrl}/${userId}/roles`, { roleIds })
+    return this.http.parseResponse(response)
+  }
+
+  /**
+   * Update user roles
+   */
+  async updateUserRoles(userId, roleIds) {
+    const response = await this.http.put(`${this.baseUrl}/${userId}/roles`, { roleIds })
+    return this.http.parseResponse(response)
+  }
+
+  /**
+   * Get user roles
+   */
+  async getUserRoles(userId) {
+    const response = await this.http.get(`${this.baseUrl}/${userId}/roles`)
+    return this.http.parseResponse(response)
+  }
+
 }

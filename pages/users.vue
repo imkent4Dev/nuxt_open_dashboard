@@ -95,7 +95,7 @@
                   <td class="px-4 py-2 text-right">
                     <div class="flex items-center justify-end space-x-2">
                       <!-- Eye -->
-                      <button @click="viewUser(user)" class="p-1.5 hover:bg-blue-50 rounded">
+                      <button @click="viewUser(user.id)" class="p-1.5 hover:bg-blue-50 rounded">
                         <EyeIcon class="w-5 h-5 text-blue-500" />
                       </button>
                       <!-- Edit -->
@@ -187,7 +187,13 @@
     @close="showAddModal = false" 
     @submit="addUser" 
   />
-  
+    <EditUserModal
+    :show="showEditModal"
+    :userId="selectedUserId"
+    :isEditMode="isEditMode"
+    @close="handleModalClose"
+    @success="handleUserUpdateSuccess"
+  />
   <!-- Success Modal -->
   <div v-if="showSuccessModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
     <div class="bg-white rounded-lg p-6 max-w-sm mx-auto">
@@ -210,6 +216,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { EyeIcon, PencilSquareIcon, TrashIcon } from '@heroicons/vue/24/outline';
 import { useRouter } from 'vue-router';
 import AddCustomerModal from '~/components/AddCustomerModal.vue';
+import EditUserModal from '~/components/EditUserModal.vue';
 import { useUserService } from '~/composables/useUserService';
 import { useAuthStore } from '~/stores/auth';
 
@@ -229,7 +236,11 @@ const itemsPerPage = ref(10);
 const totalItems = ref(0);
 const totalPages = ref(0);
 const showAddModal = ref(false);
+const showEditModal = ref(false);
 const showSuccessModal = ref(false);
+const selectedUserId = ref(null);
+const isEditMode = ref(false);
+const successMessage = ref('');
 
 // Fetch users from API using service
 async function fetchUsers() {
@@ -249,22 +260,38 @@ async function fetchUsers() {
       params.search = searchQuery.value.trim();
     }
 
-    const data = await userService.getUsers(params);
-
-    if (data.success) {
-      users.value = data.data.content || [];
-      totalItems.value = data.data.totalElements || 0;
-      totalPages.value = data.data.totalPages || 0;
-      currentPage.value = data.data.number || 0;
-    } else {
-      throw new Error(data.message?.en || 'Failed to fetch users');
+    // Use your service pattern
+    const response = await userService.getUsers(params);
+    
+    // Check for errors in the response
+    if (response && response.success === false) {
+      throw new Error(response.message || 'Failed to fetch users');
     }
+
+    // Adjust based on your actual API response structure
+    // Assuming your API returns data in a standard format:
+    // { content: [], totalElements: number, totalPages: number, number: number }
+    const data = response?.data || response;
+    
+    if (data) {
+      users.value = data.content || data.items || data.data || [];
+      totalItems.value = data.totalElements || data.total || data.totalItems || 0;
+      totalPages.value = data.totalPages || Math.ceil(totalItems.value / itemsPerPage.value) || 0;
+      currentPage.value = data.number || data.page || 0;
+    } else {
+      // Fallback if response structure is different
+      users.value = response || [];
+      totalItems.value = users.value.length;
+      totalPages.value = Math.ceil(totalItems.value / itemsPerPage.value);
+    }
+    
   } catch (err) {
     console.error('Error fetching users:', err);
     error.value = err.message || 'Failed to load users. Please try again.';
     
     // If unauthorized, redirect to login
-    if (err.message.includes('401') || err.message.includes('Unauthorized')) {
+    if (err.message?.includes('401') || err.message?.includes('Unauthorized') || 
+        err.response?.status === 401) {
       await authStore.logout();
       router.push('/login');
     }
@@ -355,15 +382,15 @@ const endItem = computed(() => {
 
 // User actions
 async function viewUser(user) {
-  console.log('View user:', user);
-  // Implement view user logic
-  // Could open a detail modal or navigate to detail page
+  selectedUserId.value = user.id;
+  isEditMode.value = false;
+  showEditModal.value = true;
 }
 
 async function editUser(user) {
-  console.log('Edit user:', user);
-  // Implement edit user logic
-  // Could open an edit modal or navigate to edit page
+  selectedUserId.value = user.id;
+  isEditMode.value = true;
+  showEditModal.value = true;
 }
 
 async function deleteUser(user) {
@@ -375,16 +402,15 @@ async function deleteUser(user) {
     loading.value = true;
     const response = await userService.deleteUser(user.id);
     
-    if (response.success) {
-      // Show success message
-      // You might want to use a toast notification instead
-      alert(`User "${user.username}" deleted successfully!`);
-      
-      // Refresh the list
-      await fetchUsers();
-    } else {
-      throw new Error(response.message?.en || 'Failed to delete user');
+    // Check for errors in the response
+    if (response && response.success === false) {
+      throw new Error(response.message || 'Failed to delete user');
     }
+
+    successMessage.value = `User "${user.username}" deleted successfully!`;
+    showSuccessModal.value = true;
+    
+    await fetchUsers(); // Refresh the list
   } catch (err) {
     console.error('Error deleting user:', err);
     alert(err.message || 'Failed to delete user');
@@ -398,15 +424,16 @@ async function addUser(newUser) {
     loading.value = true;
     const response = await userService.createUser(newUser);
     
-    if (response.success) {
-      showAddModal.value = false;
-      showSuccessModal.value = true;
-      
-      // Refresh the user list
-      await fetchUsers();
-    } else {
-      throw new Error(response.message?.en || 'Failed to create user');
+    // Check for errors in the response
+    if (response && response.success === false) {
+      throw new Error(response.message || 'Failed to create user');
     }
+
+    showAddModal.value = false;
+    successMessage.value = 'User has been created successfully!';
+    showSuccessModal.value = true;
+    
+    await fetchUsers(); // Refresh the list
   } catch (err) {
     console.error('Error creating user:', err);
     alert(err.message || 'Failed to create user');
@@ -415,9 +442,20 @@ async function addUser(newUser) {
   }
 }
 
-// Lifecycle hooks
+// Handle modal close
+const handleModalClose = () => {
+  showEditModal.value = false;
+  selectedUserId.value = null;
+}
+
+// Handle user update success
+const handleUserUpdateSuccess = async (data) => {
+  successMessage.value = data.message;
+  showSuccessModal.value = true;
+  await fetchUsers(); // Refresh the list
+}
+
 onMounted(() => {
-  // Check if user is authenticated
   if (!authStore.isAuthenticated) {
     router.push('/login');
     return;
@@ -430,6 +468,14 @@ onMounted(() => {
 watch([currentPage, itemsPerPage], () => {
   fetchUsers();
 }, { immediate: false });
+
+// Also watch for search query changes to reset pagination
+watch(searchQuery, (newVal) => {
+  if (newVal === '') {
+    currentPage.value = 0;
+    fetchUsers();
+  }
+});
 </script>
 
 <style scoped>
