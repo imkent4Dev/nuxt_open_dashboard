@@ -6,7 +6,7 @@ export class PermissionService {
   }
   
   /**
-   * Get all permissions
+   * Get all permissions (paginated)
    */
   async getAllPermissions(params = {}) {
     const queryParams = new URLSearchParams({

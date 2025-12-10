@@ -102,6 +102,8 @@
 </template>
 
 <script setup>
+import { useAuthStore } from '~/stores/auth'
+
 defineProps({
   title: {
     type: String,
@@ -115,21 +117,22 @@ const searchQuery = ref('')
 const userMenuOpen = ref(false)
 const notifications = ref(0)
 
-// Sample user data - replace with your auth store
-const user = ref({
-  name: 'John Doe',
-  email: 'john@example.com',
-  avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=John'
-})
+// Auth store user and logout
+const authStore = useAuthStore()
+const fallbackUser = {
+  name: 'User',
+  email: '',
+  avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=User'
+}
+const user = computed(() => authStore.user || fallbackUser)
 
 const toggleUserMenu = () => {
   userMenuOpen.value = !userMenuOpen.value
 }
 
 const logout = async () => {
-  // Implement your logout logic
   userMenuOpen.value = false
-  navigateTo('/login')
+  await authStore.logout()
 }
 
 // Close menu when clicking outside

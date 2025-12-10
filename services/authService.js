@@ -43,6 +43,61 @@ export class AuthService {
     }
   }
 
+  /**
+   * Get user with roles and permissions by ID
+   */
+  async getUserPermissionsById(id, accessToken, tokenType = 'Bearer') {
+    const response = await fetch(`${this.apiBase}/api/v1/auth/users/${id}/permissions`, {
+      headers: {
+        'Authorization': `${tokenType} ${accessToken}`,
+        'accept': '*/*'
+      }
+    })
+    return response.json()
+  }
+
+  /**
+   * Get user with roles and permissions by username
+   */
+  async getUserPermissionsByUsername(username, accessToken, tokenType = 'Bearer') {
+    const response = await fetch(`${this.apiBase}/api/v1/auth/users/username/${username}/permissions`, {
+      headers: {
+        'Authorization': `${tokenType} ${accessToken}`,
+        'accept': '*/*'
+      }
+    })
+    return response.json()
+  }
+
+  /**
+   * Get only permissions list for a user
+   */
+  async getUserPermissionList(id, accessToken, tokenType = 'Bearer') {
+    const response = await fetch(`${this.apiBase}/api/v1/auth/users/${id}/permissions/list`, {
+      headers: {
+        'Authorization': `${tokenType} ${accessToken}`,
+        'accept': '*/*'
+      }
+    })
+    return response.json()
+  }
+
+  /**
+   * Check if a user has a specific permission
+   */
+  async checkPermission(payload, accessToken, tokenType = 'Bearer') {
+    const response = await fetch(`${this.apiBase}/api/v1/auth/check-permission`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `${tokenType} ${accessToken}`,
+        'Content-Type': 'application/json',
+        'accept': '*/*'
+      },
+      body: JSON.stringify(payload)
+    })
+    return response.json()
+  }
+
   async refreshToken(refreshToken) {
     const response = await fetch(`${this.apiBase}/api/v1/auth/refresh`, {
       method: 'POST',
