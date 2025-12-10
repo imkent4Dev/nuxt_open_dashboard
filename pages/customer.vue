@@ -42,7 +42,7 @@
 
               <!-- New Button -->
               <button @click="showAddModal = true"
-                class="ml-4 px-4 py-2 btn-gradient text-white rounded-lg shadow hover:bg-blue-600 transition">
+                class="ml-4 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg shadow hover:from-blue-600 hover:to-blue-700 transition">
                 + Add New
               </button>
             </div>
@@ -68,7 +68,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(user, index) in paginatedData" :key="user.id"
+                <tr v-for="(user, index) in filteredUsers" :key="user.id"
                   :class="index % 2 === 0 ? 'bg-white' : 'bg-gray-50'" class="border-t hover:bg-gray-100">
                   <td class="px-4 py-2 text-sm">{{ user.id }}</td>
                   <td class="px-4 py-2 text-sm font-medium">{{ user.username }}</td>
@@ -113,7 +113,7 @@
             </table>
 
             <!-- Empty State -->
-            <div v-if="!loading && paginatedData.length === 0" class="text-center py-8">
+            <div v-if="!loading && filteredUsers.length === 0" class="text-center py-8">
               <svg class="w-12 h-12 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
               </svg>
@@ -121,7 +121,7 @@
               <p class="mt-1 text-sm text-gray-500">Get started by creating a new user.</p>
               <div class="mt-6">
                 <button @click="showAddModal = true"
-                  class="px-4 py-2 btn-gradient text-white rounded-lg shadow hover:bg-blue-600 transition">
+                  class="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg shadow hover:from-blue-600 hover:to-blue-700 transition">
                   + Add New User
                 </button>
               </div>
@@ -131,7 +131,7 @@
       </div>
 
       <!-- Pagination -->
-      <div v-if="!loading && !error && paginatedData.length > 0" class="flex justify-between items-center mt-4 space-x-4">
+      <div v-if="!loading && !error && filteredUsers.length > 0" class="flex justify-between items-center mt-4 space-x-4">
         <!-- Total items -->
         <div class="text-sm text-gray-600">
           Showing {{ startItem }} to {{ endItem }} of {{ totalItems }} users
@@ -178,22 +178,28 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
 
-      <!-- Modals -->
-      <AddCustomerModal :show="showAddModal" @close="showAddModal = false" @submit="addUser" />
-      
-      <!-- Success Modal -->
-      <div v-if="showSuccessModal" class="modal show">
-        <div class="modal-content">
-          <div class="flex justify-center mb-4">
-            <img src="/icons/success.png" alt="Success Tick" class="w-25 h-22" />
-          </div>
-          <h3 class="text-lg font-bold text-gray-900 mb-2">Successful</h3>
-          <p class="text-gray-600 mb-4">You have successfully created</p>
-          <button @click="showSuccessModal = false" class="px-4 py-4 btn-gradient transition-colors duration-200">
-            Close
-          </button>
-        </div>
+  <!-- Modals -->
+  <AddCustomerModal 
+    :show="showAddModal" 
+    @close="showAddModal = false" 
+    @submit="addUser" 
+  />
+  
+  <!-- Success Modal -->
+  <div v-if="showSuccessModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 max-w-sm mx-auto">
+      <div class="flex justify-center mb-4">
+        <img src="/icons/success.png" alt="Success Tick" class="w-16 h-16" />
+      </div>
+      <h3 class="text-lg font-bold text-gray-900 mb-2 text-center">Successful</h3>
+      <p class="text-gray-600 mb-4 text-center">User has been created successfully!</p>
+      <div class="flex justify-center">
+        <button @click="showSuccessModal = false" class="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition">
+          Close
+        </button>
       </div>
     </div>
   </div>
@@ -202,11 +208,16 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { EyeIcon, PencilSquareIcon, TrashIcon } from '@heroicons/vue/24/outline';
+import { useRouter } from 'vue-router';
 import AddCustomerModal from '~/components/AddCustomerModal.vue';
+import { useUserService } from '~/composables/useUserService';
+import { useAuthStore } from '~/stores/auth';
 
-// API Configuration
-const API_BASE_URL = 'http://localhost:8081/api/v1';
-const AUTH_TOKEN = 'eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NTI3MjYwNCwiZXhwIjoxNzY1MzU5MDA0fQ.LQQfaX4Ahi6TU2B4RznF_BdTD3LuK6o9-268uMa8Pt2oa5j0JV-tyqptUGJyy56O';
+const router = useRouter();
+
+// Initialize services
+const userService = useUserService();
+const authStore = useAuthStore();
 
 // Reactive state
 const users = ref([]);
@@ -220,48 +231,43 @@ const totalPages = ref(0);
 const showAddModal = ref(false);
 const showSuccessModal = ref(false);
 
-// Fetch users from API
+// Fetch users from API using service
 async function fetchUsers() {
   try {
     loading.value = true;
     error.value = null;
-    
-    const params = new URLSearchParams({
+
+    const params = {
       page: currentPage.value,
       size: itemsPerPage.value,
       sortBy: 'id',
       sortDir: 'DESC'
-    });
+    };
 
     // Add search parameter if search query exists
     if (searchQuery.value.trim()) {
-      params.append('search', searchQuery.value.trim());
+      params.search = searchQuery.value.trim();
     }
 
-    const response = await fetch(`${API_BASE_URL}/users?${params}`, {
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${AUTH_TOKEN}`
-      }
-    });
+    const data = await userService.getUsers(params);
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    
     if (data.success) {
-      users.value = data.data.content;
-      totalItems.value = data.data.totalElements;
-      totalPages.value = data.data.totalPages;
-      currentPage.value = data.data.number;
+      users.value = data.data.content || [];
+      totalItems.value = data.data.totalElements || 0;
+      totalPages.value = data.data.totalPages || 0;
+      currentPage.value = data.data.number || 0;
     } else {
       throw new Error(data.message?.en || 'Failed to fetch users');
     }
   } catch (err) {
     console.error('Error fetching users:', err);
     error.value = err.message || 'Failed to load users. Please try again.';
+    
+    // If unauthorized, redirect to login
+    if (err.message.includes('401') || err.message.includes('Unauthorized')) {
+      await authStore.logout();
+      router.push('/login');
+    }
   } finally {
     loading.value = false;
   }
@@ -315,7 +321,7 @@ function formatDate(dateString) {
 }
 
 // Computed properties
-const paginatedData = computed(() => users.value);
+const filteredUsers = computed(() => users.value);
 
 const displayedPages = computed(() => {
   const pages = [];
@@ -338,47 +344,99 @@ const displayedPages = computed(() => {
 });
 
 const startItem = computed(() => {
-  return Math.min(currentPage.value * itemsPerPage.value + 1, totalItems.value);
+  const start = currentPage.value * itemsPerPage.value + 1;
+  return Math.min(start, totalItems.value);
 });
 
 const endItem = computed(() => {
-  return Math.min((currentPage.value + 1) * itemsPerPage.value, totalItems.value);
+  const end = (currentPage.value + 1) * itemsPerPage.value;
+  return Math.min(end, totalItems.value);
 });
 
 // User actions
-function viewUser(user) {
+async function viewUser(user) {
   console.log('View user:', user);
   // Implement view user logic
+  // Could open a detail modal or navigate to detail page
 }
 
-function editUser(user) {
+async function editUser(user) {
   console.log('Edit user:', user);
   // Implement edit user logic
+  // Could open an edit modal or navigate to edit page
 }
 
-function deleteUser(user) {
-  if (confirm(`Are you sure you want to delete user "${user.username}"?`)) {
-    console.log('Delete user:', user);
-    // Implement delete user logic
+async function deleteUser(user) {
+  if (!confirm(`Are you sure you want to delete user "${user.username}"?`)) {
+    return;
+  }
+
+  try {
+    loading.value = true;
+    const response = await userService.deleteUser(user.id);
+    
+    if (response.success) {
+      // Show success message
+      // You might want to use a toast notification instead
+      alert(`User "${user.username}" deleted successfully!`);
+      
+      // Refresh the list
+      await fetchUsers();
+    } else {
+      throw new Error(response.message?.en || 'Failed to delete user');
+    }
+  } catch (err) {
+    console.error('Error deleting user:', err);
+    alert(err.message || 'Failed to delete user');
+  } finally {
+    loading.value = false;
   }
 }
 
-function addUser(newUser) {
-  // This would typically make an API call to create a new user
-  console.log('Add new user:', newUser);
-  showAddModal.value = false;
-  showSuccessModal.value = true;
-  // Refresh the user list after adding
-  setTimeout(() => fetchUsers(), 1000);
+async function addUser(newUser) {
+  try {
+    loading.value = true;
+    const response = await userService.createUser(newUser);
+    
+    if (response.success) {
+      showAddModal.value = false;
+      showSuccessModal.value = true;
+      
+      // Refresh the user list
+      await fetchUsers();
+    } else {
+      throw new Error(response.message?.en || 'Failed to create user');
+    }
+  } catch (err) {
+    console.error('Error creating user:', err);
+    alert(err.message || 'Failed to create user');
+  } finally {
+    loading.value = false;
+  }
 }
 
 // Lifecycle hooks
 onMounted(() => {
+  // Check if user is authenticated
+  if (!authStore.isAuthenticated) {
+    router.push('/login');
+    return;
+  }
+  
   fetchUsers();
 });
 
-// Watch for pagination changes (handled via API calls)
+// Watch for pagination changes
 watch([currentPage, itemsPerPage], () => {
   fetchUsers();
 }, { immediate: false });
 </script>
+
+<style scoped>
+.text-gradient {
+  background: linear-gradient(to right, #3b82f6, #1d4ed8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+</style>

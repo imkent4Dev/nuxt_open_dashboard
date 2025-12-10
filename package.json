@@ -20,6 +20,7 @@
     "@headlessui/vue": "^1.7.23",
     "@heroicons/vue": "^2.2.0",
     "@nuxtjs/i18n": "^8.5.6",
+    "@nuxtjs/proxy": "^2.1.0",
     "@pinia/nuxt": "^0.5.5",
     "nuxt": "^3.14.159",
     "pinia": "^2.3.1"

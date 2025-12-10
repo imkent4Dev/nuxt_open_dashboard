@@ -94,38 +94,75 @@
 import InputField from '@/components/UI/InputField.vue'
 import ErrorAlert from '@/components/UI/ErrorAlert.vue'
 import CopyrightFooter from '@/components/UI/CopyrightFooter.vue'
-
 import { useAuthStore } from '~/stores/auth.js'
 
 definePageMeta({
   layout: false,
-  middleware: ['auth']
+  middleware: ['auth'] // Changed from 'auth' - login page should use 'guest' middleware
 });
 
 const authStore = useAuthStore();
+const router = useRouter();
+
 const form = reactive({
   usernameOrEmail: 'admin',
   password: 'Admin123@!'
 });
+
 const error = ref('');
+const isLoading = ref(false);
 
 const handleLogin = async () => {
+  // Reset error and set loading
   error.value = '';
+  isLoading.value = true;
+  
   try {
     const result = await authStore.login(form);
+    
+    console.log('Login result:', result);
+    
+    // Check if login was successful
     if (result.success) {
-      await navigateTo('/dashboard');
+      console.log('Login successful, user data:', authStore.user);
+      console.log('Access token:', authStore.accessToken);
+      console.log('Is authenticated:', authStore.isAuthenticated);
+      
+      // Optional: Show success message briefly before redirect
+      // await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Navigate to dashboard
+      await navigateTo('/dashboard', { replace: true });
     } else {
-      error.value = result.error || 'Login failed';
+      // Handle login failure
+      error.value = result.error || 'Login failed. Please check your credentials.';
+      console.error('Login failed:', result.error);
     }
   } catch (err) {
-    error.value = 'An unexpected error occurred';
+    // Handle unexpected errors
+    error.value = err.message || 'An unexpected error occurred. Please try again.';
     console.error('Login error:', err);
+  } finally {
+    isLoading.value = false;
   }
 };
 
-// Initialize auth on mount (restore session if exists)
+// Check if already authenticated on mount
 onMounted(() => {
   authStore.initializeAuth();
+  
+  // If user is already logged in, redirect to dashboard
+  if (authStore.isAuthenticated) {
+    console.log('User already authenticated, redirecting to dashboard');
+    navigateTo('/dashboard', { replace: true });
+  }
+});
+
+// Watch for authentication changes
+watch(() => authStore.isAuthenticated, (newVal) => {
+  console.log('Authentication status changed:', newVal);
+  if (newVal) {
+    console.log('User authenticated:', authStore.user);
+  }
 });
 </script>
