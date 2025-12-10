@@ -129,26 +129,3 @@ onMounted(() => {
   authStore.initializeAuth();
 });
 </script>
-
-<style scoped>
-.decoration-image {
-  width: 100%;
-  height: 100%;
-  max-width: 600px;
-  max-height: 600px;
-}
-
-@media (max-width: 1024px) {
-  .decoration-image {
-    max-width: 400px;
-    max-height: 400px;
-  }
-}
-
-@media (max-width: 640px) {
-  .decoration-image {
-    max-width: 300px;
-    max-height: 300px;
-  }
-}
-</style>
