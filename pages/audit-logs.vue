@@ -382,9 +382,9 @@ async function fetchAuditLogs() {
     loading.value = true
     error.value = null
 
-    console.log('🚀 Starting fetchAuditLogs...')
-    console.log('📱 Current auth token:', authStore.token ? 'Present' : 'Missing')
-    console.log('🔍 Audit service:', auditService ? 'Available' : 'Missing')
+    //console.log('🚀 Starting fetchAuditLogs...')
+    //console.log('📱 Current auth token:', authStore.token ? 'Present' : 'Missing')
+    //console.log('🔍 Audit service:', auditService ? 'Available' : 'Missing')
 
     const params = {
       page: currentPage.value,
@@ -398,25 +398,25 @@ async function fetchAuditLogs() {
     // Add search
     if (searchQuery.value.trim()) {
       params.search = searchQuery.value.trim()
-      console.log('🔍 Search query:', searchQuery.value.trim())
+      //console.log('🔍 Search query:', searchQuery.value.trim())
     }
 
     // Add filters
     if (selectedAction.value) {
       params.action = selectedAction.value
-      console.log('🎯 Action filter:', selectedAction.value)
+      //console.log('🎯 Action filter:', selectedAction.value)
     }
     if (selectedStatus.value !== '') {
       params.success = selectedStatus.value
-      console.log('✅ Status filter:', selectedStatus.value)
+      //console.log('✅ Status filter:', selectedStatus.value)
     }
 
-    console.log('📤 Final params:', params)
+    //console.log('📤 Final params:', params)
 
     // Make API call
     const response = await auditService.getAuditLogs(params)
     
-    console.log('📥 Raw API response:', response)
+    //console.log('📥 Raw API response:', response)
     
     if (response && response.success) {
       console.log('✅ API call successful')
@@ -426,26 +426,26 @@ async function fetchAuditLogs() {
       totalPages.value = response.data.totalPages || 0
       currentPage.value = response.data.number || 0
       
-      console.log('📊 Processed data:', {
-        logsCount: auditLogs.value.length,
-        totalItems: totalItems.value,
-        totalPages: totalPages.value,
-        currentPage: currentPage.value
-      })
+      // console.log('📊 Processed data:', {
+      //   logsCount: auditLogs.value.length,
+      //   totalItems: totalItems.value,
+      //   totalPages: totalPages.value,
+      //   currentPage: currentPage.value
+      // })
     } else {
       console.error('❌ API returned failure:', response)
       throw new Error(response?.message?.en || response?.message || 'Failed to fetch audit logs')
     }
   } catch (err) {
-    console.error('💥 Error in fetchAuditLogs:', err)
-    console.error('📊 Error object:', {
-      name: err.name,
-      message: err.message,
-      stack: err.stack,
-      response: err.response,
-      status: err.response?.status,
-      data: err.response?.data
-    })
+    // console.error('💥 Error in fetchAuditLogs:', err)
+    // console.error('📊 Error object:', {
+    //   name: err.name,
+    //   message: err.message,
+    //   stack: err.stack,
+    //   response: err.response,
+    //   status: err.response?.status,
+    //   data: err.response?.data
+    // })
     
     error.value = err.message || 'Failed to load audit logs. Please try again.'
     
